@@ -1,0 +1,11 @@
+name: YTT
+description: Dynamically generate pipelines templates using ytt.
+author: https://github.com/thazhemadam
+requirements: [wget]
+configuration:
+  properties:
+    version:
+      type: string
+    arch:
+      type: string
+  additionalProperties: false
