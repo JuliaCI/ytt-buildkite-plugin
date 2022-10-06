@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+set -euo pipefail
+shopt -s extglob
+
+if [[ "${BUILDKITE_PLUGIN_YTT_DEBUG_PLUGIN:-false}" == "true" ]]; then
+    set -x
+fi
+
+# Where ytt will be downloaded to
+# Persist this directory to massively speed up your builds
+CACHE_DIR=${BUILDKITE_PLUGIN_YTT_CACHE_DIR:-${HOME}/.cache/ytt-buildkite-plugin}
+
+
+# Look around to find the default download engine
+# We prefer `curl` as it's more likely it's up to date and not some kind of
+# busybox impostor, which `wget` is within our very own test suite!
+if [[ -n "$(which curl 2>/dev/null)" ]]; then
+    download() { curl -Lfs "$1" -o "$2" -z "$2"; }
+elif [[ -n "$(which wget 2>/dev/null)" ]]; then
+    download() { wget -nv -NP "$(dirname "$2")" "$1"; }
+else
+    buildkite-agent annotate --style error "No download agent available"
+    exit 1
+fi
+
+# The version of YTT we're downloading
+YTT_VERSION="${BUILDKITE_PLUGIN_YTT_VERSION}"
+# We allow the user to override the architecture we download
+ARCH="${BUILDKITE_PLUGIN_YTT_ARCH:-$(uname -m)}"
+
+# Operating System
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS="linux"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="darwin"
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+    # POSIX compatibility layer and Linux environment emulation for Windows
+    OS="windows"
+elif [[ "$OSTYPE" == "msys" ]]; then
+    # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
+    OS="windows"
+else
+    buildkite-agent annotate --style error "Unhandled OS $OSTYPE"
+    exit 1
+fi
+
+# ISA
+if [[ "$ARCH" == "x86_64" ]]; then
+    ARCH="amd64"
+elif [[ "$ARCH" == "amd64"* ]]; then
+    ARCH="amd64"
+elif [[ "$ARCH" == "arm64" ]]; then
+    ARCH="arm64"
+else
+    buildkite-agent annotate --style error "Unhandled architecture $ARCH."
+    exit 1
+fi
+
+DOWNLOAD_DESTINATION="${CACHE_DIR}/ytt_install/bin/${OSTYPE}/${ARCH}"
+if [[ ! -d "${DOWNLOAD_DESTINATION}" ]]; then
+    echo "New installation detected!"
+    mkdir -p "${DOWNLOAD_DESTINATION}"
+fi
+
+URL="https://github.com/vmware-tanzu/carvel-ytt/releases/download/${YTT_VERSION}/ytt-${OS}-${ARCH}"
+download "${URL}" "${DOWNLOAD_DESTINATION}"
+
+if [[ "${OSTYPE}" != "msys" ]]; then
+    # Export `PATH` such that this `ytt` is the first one other plugins find
+    export PATH=${DOWNLOAD_DESTINATION}/bin:"$PATH"
+else
+    # buildkite/agent#872: PATH gets corrupted on Windows
+    # So we pass each element of `$PATH` through `cygpath -w`
+    MSYS_PATH="$(cygpath -w ${DOWNLOAD_DESTINATION}/bin)"
+    IFS=':'
+    for p in $PATH ; do
+        MSYS_PATH="${MSYS_PATH};$(cygpath -w $p)"
+    done
+    export PATH="${MSYS_PATH}"
+fi
