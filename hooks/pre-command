@@ -44,7 +44,7 @@ else
     exit 1
 fi
 
-# ISA
+# Architecture
 if [[ "$ARCH" == "x86_64" ]]; then
     ARCH="amd64"
 elif [[ "$ARCH" == "amd64"* ]]; then
