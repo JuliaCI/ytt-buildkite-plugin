@@ -60,7 +60,7 @@ if [[ ! -d "${DOWNLOAD_DESTINATION}" ]]; then
     mkdir -p "${DOWNLOAD_DESTINATION}"
 fi
 
-URL="https://github.com/vmware-tanzu/carvel-ytt/releases/download/${YTT_VERSION}/ytt-${OS}-${ARCH}"
+URL="https://github.com/vmware-tanzu/carvel-ytt/releases/download/v${YTT_VERSION}/ytt-${OS}-${ARCH}"
 download "${URL}" "${DOWNLOAD_DESTINATION}"
 
 if [[ "${OSTYPE}" != "msys" ]]; then
