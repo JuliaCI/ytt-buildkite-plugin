@@ -65,11 +65,11 @@ download "${URL}" "${DOWNLOAD_DESTINATION}"
 
 if [[ "${OSTYPE}" != "msys" ]]; then
     # Export `PATH` such that this `ytt` is the first one other plugins find
-    export PATH=${DOWNLOAD_DESTINATION}/bin:"$PATH"
+    export PATH=${DOWNLOAD_DESTINATION}:"$PATH"
 else
     # buildkite/agent#872: PATH gets corrupted on Windows
     # So we pass each element of `$PATH` through `cygpath -w`
-    MSYS_PATH="$(cygpath -w ${DOWNLOAD_DESTINATION}/bin)"
+    MSYS_PATH="$(cygpath -w ${DOWNLOAD_DESTINATION})"
     IFS=':'
     for p in $PATH ; do
         MSYS_PATH="${MSYS_PATH};$(cygpath -w $p)"
