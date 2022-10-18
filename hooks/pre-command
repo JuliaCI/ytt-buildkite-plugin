@@ -15,9 +15,9 @@ CACHE_DIR=${BUILDKITE_PLUGIN_YTT_CACHE_DIR:-${HOME}/.cache/ytt-buildkite-plugin}
 # We prefer `curl` as it's more likely it's up to date and not some kind of
 # busybox impostor, which `wget` is within our very own test suite!
 if [[ -n "$(which curl 2>/dev/null)" ]]; then
-    download() { curl -Lfs "$1" -o "$2" -z "$2"; }
+    download() { curl -Lfs "$1" --output "$2/ytt"; }
 elif [[ -n "$(which wget 2>/dev/null)" ]]; then
-    download() { wget -nv -NP "$(dirname "$2")" "$1"; }
+    download() { wget -nv -NO "$2/ytt" "$1"; }
 else
     buildkite-agent annotate --style error "No download agent available"
     exit 1
@@ -62,6 +62,7 @@ fi
 
 URL="https://github.com/vmware-tanzu/carvel-ytt/releases/download/v${YTT_VERSION}/ytt-${OS}-${ARCH}"
 download "${URL}" "${DOWNLOAD_DESTINATION}"
+chmod +x "${DOWNLOAD_DESTINATION}/ytt"
 
 if [[ "${OSTYPE}" != "msys" ]]; then
     # Export `PATH` such that this `ytt` is the first one other plugins find
