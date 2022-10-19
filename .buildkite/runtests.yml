@@ -1,0 +1,23 @@
+self_test_setup: &self_test_setup
+  post-checkout: |
+    mkdir -p .buildkite/plugins/ytt
+    cp -Ra hooks plugin.yml README.md .buildkite/plugins/ytt/
+  
+steps:
+  - label: ":toolbox: ${AGENT_OS?} ${ARCH?} ${YTT_VERSION?}"
+    agents:
+      queue: "juliaecosystem"
+      os: "${AGENT_OS?}"
+      arch: "${AGENT_ARCH?}"
+    plugins:
+      # In order to properly use the current repository as a plugin within a pipeline,
+      # we have to first install it into the "vendored plugin" location.
+      - staticfloat/metahook#sf/windows_backslashes:
+          <<: *self_test_setup
+      - "./.buildkite/plugins/ytt":
+          version: "${YTT_VERSION?}"
+
+    commands: |
+      # check if we got the expected version of the plugin
+      CHECK_VERSION="${YTT_VERSION?}"
+      [[ "$$(ytt version)" == "ytt version $${CHECK_VERSION}" ]]
