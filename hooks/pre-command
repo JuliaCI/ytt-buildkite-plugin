@@ -28,22 +28,6 @@ YTT_VERSION="${BUILDKITE_PLUGIN_YTT_VERSION}"
 # We allow the user to override the architecture we download
 ARCH="${BUILDKITE_PLUGIN_YTT_ARCH:-$(uname -m)}"
 
-# Operating System
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    OS="linux"
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    OS="darwin"
-elif [[ "$OSTYPE" == "cygwin" ]]; then
-    # POSIX compatibility layer and Linux environment emulation for Windows
-    OS="windows"
-elif [[ "$OSTYPE" == "msys" ]]; then
-    # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
-    OS="windows"
-else
-    buildkite-agent annotate --style error "Unhandled OS $OSTYPE"
-    exit 1
-fi
-
 # Architecture
 if [[ "$ARCH" == "x86_64" || "$ARCH" == "amd64"* ]]; then
     ARCH="amd64"
@@ -54,13 +38,33 @@ else
     exit 1
 fi
 
+# Operating System
+if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    OS="linux"
+    YTT_BINARY="ytt-${OS}-${ARCH}"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+    OS="darwin"
+    YTT_BINARY="ytt-${OS}-${ARCH}"
+elif [[ "$OSTYPE" == "cygwin" ]]; then
+    # POSIX compatibility layer and Linux environment emulation for Windows
+    OS="windows"
+    YTT_BINARY="ytt-${OS}-${ARCH}.exe"
+elif [[ "$OSTYPE" == "msys" ]]; then
+    # Lightweight shell and GNU utilities compiled for Windows (part of MinGW)
+    OS="windows"
+    YTT_BINARY="ytt-${OS}-${ARCH}.exe"
+else
+    buildkite-agent annotate --style error "Unhandled OS $OSTYPE"
+    exit 1
+fi
+
 DOWNLOAD_DESTINATION="${CACHE_DIR}/ytt_install/bin/${OSTYPE}/${ARCH}"
 if [[ ! -d "${DOWNLOAD_DESTINATION}" ]]; then
     echo "New installation detected!"
     mkdir -p "${DOWNLOAD_DESTINATION}"
 fi
 
-URL="https://github.com/vmware-tanzu/carvel-ytt/releases/download/v${YTT_VERSION}/ytt-${OS}-${ARCH}"
+URL="https://github.com/vmware-tanzu/carvel-ytt/releases/download/v${YTT_VERSION}/${YTT_BINARY}"
 download "${URL}" "${DOWNLOAD_DESTINATION}"
 chmod +x "${DOWNLOAD_DESTINATION}/ytt"
 
