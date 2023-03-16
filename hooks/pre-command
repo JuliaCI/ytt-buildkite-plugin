@@ -24,7 +24,7 @@ else
 fi
 
 # The version of YTT we're downloading
-YTT_VERSION="${BUILDKITE_PLUGIN_YTT_VERSION}"
+YTT_VERSION="${BUILDKITE_PLUGIN_YTT_VERSION:-$(curl -Ls -o /dev/null -w %{url_effective} https://github.com/carvel-dev/ytt/releases/latest | awk -F/ '{print $NF}')}"
 # We allow the user to override the architecture we download
 ARCH="${BUILDKITE_PLUGIN_YTT_ARCH:-$(uname -m)}"
 
